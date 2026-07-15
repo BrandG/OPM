@@ -1,0 +1,81 @@
+# OPM configuration
+# All tunable parameters live here so they can be swept in the backtester
+# without touching code. Values below are v1 starting points from the design
+# spec, NOT yet validated against outcomes.
+
+data:
+  db_path: "data/scanner.db"        # SQLite cache location (relative to project root)
+  history_period: "TWO_YEARS"       # how much daily history to pull/store per symbol
+  bar_step: "ONE_DAY"               # primary detection timeframe (daily per consensus spec)
+
+universe:
+  # Path to the S&P 500 constituent list (symbol per line, or CSV with a `symbol` column).
+  # Populated by a separate universe-refresh step (not part of the data-layer milestone).
+  source_file: "data/sp500.txt"
+  max_share_price: null             # optional affordability cap; null = no cap (fractional shares in use)
+
+# --- Below are placeholders for later phases; not used by the data layer yet ---
+
+volatility:
+  atr_period: 20                    # ATR lookback for volatility ranking
+  min_bars: 100                     # exclude thin-history names (spinoffs/IPOs) from ranking
+  top_n: 100                        # how many most-volatile names to carry forward
+
+pivots:
+  n_bars: 4                         # fractal half-width (lowest low among N bars each side)
+
+clustering:
+  atr_tolerance: 0.35               # zone merge tolerance as a fraction of ATR% (price-relative)
+
+detection:
+  lookback_bars: 252                # trailing window (~1yr) used for zone detection; full history stays cached
+
+scoring:
+  min_touches: 2
+  preferred_touches: 3
+  weights:                          # sum to 100 -> composite score is 0-100
+    touches: 25
+    bounce: 25
+    angle: 15
+    psych: 10
+    containment: 15
+    recency: 10
+  params:
+    touch_cap: 6                    # touches at/above this earn full touch score
+    bounce_bars: 5                  # window each side of a pivot for approach/rejection
+    bounce_target_atr: 1.5          # rejection reach (ATR mult) for full bounce score
+    angle_target_atr: 1.0           # min(in,out) reach (ATR mult) for full V-shape score
+    break_buffer_atr: 0.1           # a close beyond the zone by this counts as a break
+    recency_halflife_bars: 63       # ~3 months; decay on bars since last touch
+    psych_tol_pct: 0.005            # proximity window to round numbers, as frac of price
+
+trade:
+  min_corridor_pct: 0.03            # reject setups with support->resistance gap under this
+  max_target_atr: null              # reject if target is > N*ATR from entry. Sweep (250-sym) showed NO edge change on/off (far targets already time-stop honestly in the backtest) -> left OFF; the metric is surfaced in the scan as `tATR`/`far` so manual selection isn't fooled by illusory R/R.
+  min_reward_risk: 2.0              # hard R/R gate
+  stop_atr_buffer: 0.35             # stop = support_zone_low - buffer*ATR (NOT next support down)
+  min_zone_score: 55                # only bracket between zones scoring >= this
+  entry_buffer_atr: 0.05            # entry = support_high + buffer*ATR (slightly above support)
+  target_buffer_atr: 0.10           # target = resistance_low - buffer*ATR (just below resistance)
+  max_entry_dist_pct: 0.03          # price within this above support top => setup is "armed"
+  blue_sky: skip                    # 'skip' = no trade when no resistance above (blue-sky breakout)
+  require_trend: false              # if true: longs only in uptrends, shorts only in downtrends
+  trend_sma_period: 100             # SMA length defining the trend for the filter
+  entry_confirm_bars: 15            # window to confirm price is pulling back to support FROM ABOVE
+  min_recent_above: 0.5             # >= this fraction of recent closes must sit above support (not rising into it)
+  # --- fractional-share position sizing ---
+  account_equity: 10200             # sizing base = IBKR net liq (~$10.2k; ~$4.7k of it free cash, rest in open positions). Wire to live net_liq via check_api later.
+  risk_pct: 0.01                    # risk this fraction of equity per trade
+  max_position_pct: 0.20            # cap one position at this fraction of equity (5 positions @ 20% = fully invested; percent-based, scales with equity)
+
+regime:
+  enabled: true                     # cash switch: suppress NEW longs when the market is below its trend
+  sma_period: 200                   # trend line for the synthetic equal-weight market index
+  allow_shorts: false               # 'later' toggle: when true + market down, emit shorts instead of cash
+
+backtest:
+  warmup_bars: 252                  # bars needed before the first signal (>= detection lookback)
+  max_hold_bars: 10                 # time stop (~2-week horizon = what the user actually holds). Sweep: 30->10 costs ~18% of per-trade edge (+0.223->+0.184R) but makes the backtest honest to real behavior; 15-20 keeps more edge if the horizon is soft.
+  entry_expiry_bars: 10             # cancel a pending entry limit if unfilled within this
+  resignal_every: 3                 # while flat, re-run detection every N bars (not every bar)
+  slippage_atr: 0.05                # adverse fill on market-order legs (stop/time exits) as a fraction of ATR; limit entry/target unaffected. 0.0=gross, 0.10=conservative
