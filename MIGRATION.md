@@ -8,6 +8,26 @@ each phase gates the next._
 The daily 18:30 job needs a machine that's reliably on. Task Scheduler can also
 **wake the desktop from sleep** to run the job — an upgrade over the laptop.
 
+## Do-anytime prep (any evening BEFORE Saturday)
+Everything stateless can happen early — only ledger ownership (fresh `scanner.db`
++ which machine's timer runs) defines the cutover. Safe now, on the desktop:
+- [ ] Install **Python 3.12** (python.org, check "Add python.exe to PATH" —
+      Win11 ships only a Store stub, not real Python).
+- [ ] Install **Git for Windows** (defaults are fine).
+- [ ] Install **Claude Code** for Windows and sign in.
+- [ ] Install **TWS** for Windows + configure API settings (Phase 3 below). Note:
+      logging in kicks the laptop's TWS session — harmless; the daily cycle
+      doesn't use TWS.
+- [ ] **Dress rehearsal (optional but recommended):** transfer the repo now, build
+      the venv, run the 75 tests, copy a THROWAWAY `scanner.db`, and even run
+      `run_cycle.ps1` manually against it. Treat that DB as disposable — it will
+      be stale by Saturday and MUST be replaced with a fresh copy at cutover.
+      The laptop remains the system of record until the timers flip.
+- [ ] Create the Task Scheduler job (Phase 4) but leave it **DISABLED**.
+
+If the rehearsal is done, Saturday reduces to: re-copy fresh `scanner.db` →
+enable the desktop task → disable the laptop timer → verify one run.
+
 ## Phase 0 — Before leaving the laptop
 - [ ] `cd ~/Documents/OPM && ./.venv/bin/python -m pytest -q` → **75 passed**
 - [ ] Make sure no scan is mid-run, then grab a clean copy of **`data/scanner.db`**
