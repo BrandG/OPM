@@ -70,6 +70,7 @@ trade:
 
 email:
   enabled: true                     # send the daily actionable digest (ARMED/CLEARED) by email
+  heartbeat: true                   # on quiet days (no ARMED/CLEARED changes), still send a short "ran, nothing new" note so you know it's alive
   smtp_host: smtp.gmail.com
   smtp_port: 587
   from_addr: ""                     # blank => use the SMTP user

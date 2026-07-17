@@ -1,6 +1,6 @@
 """Email digest — HTML rendering, the far-target flag, and the safe-by-default guard."""
 
-from src.notify_email import build_digest_html, send_report
+from src.notify_email import build_digest_html, build_heartbeat_html, send_report
 
 
 def _armed(sym, entry, score=75.0, rr=4.0, tatr=3.0, sector="Industrials"):
@@ -26,6 +26,14 @@ def test_digest_flags_far_target():
     # "#b8860b" (gold) styles only a flagged row; the footer mentions "far" in both.
     assert "#b8860b" in far
     assert "#b8860b" not in near
+
+
+def test_heartbeat_html_reports_standing_count():
+    with_armed = build_heartbeat_html("2026-07-17 · market UP", armed_now=40)
+    assert "no changes" in with_armed
+    assert "40 setup(s) currently armed" in with_armed
+    empty = build_heartbeat_html("hdr", armed_now=0)
+    assert "No setups currently armed" in empty
 
 
 def test_send_is_disabled_by_default():

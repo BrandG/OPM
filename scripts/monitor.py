@@ -86,7 +86,8 @@ def main() -> None:
             ev, _ = evaluate(st["symbol"], st, None, now)
             events += ev
             store.clear_setup_state(st["symbol"])
-    else:
+    armed_now = 0
+    if not cash_mode:
         builder = build_short_setup if short_mode else build_setup
         for sym, df in frames.items():
             res = detect_zones(df, **dp)
@@ -97,6 +98,8 @@ def main() -> None:
             setup = builder(sym, scored, float(closes[-1]), res["atr"], t,
                             closes=closes, trend=trend)
             setup["sector"] = sectors.get(sym, "?")
+            if setup.get("passed") and setup.get("armed"):
+                armed_now += 1
             prev = store.get_setup_state(sym)
             ev, rec = evaluate(sym, prev, setup, now)
             events += ev
@@ -106,21 +109,27 @@ def main() -> None:
                 store.clear_setup_state(sym)
 
     _report(now, market, index, rg, cash_mode, short_mode, events, args.quiet_if_empty)
-    _maybe_email(cfg, now, market, events)
+    _maybe_email(cfg, now, market, events, armed_now)
 
 
-def _maybe_email(cfg, now, market, events):
-    """Email the actionable digest (change-only) — only when something armed or
-    cleared. Never raises; a send failure is logged, not fatal."""
+def _maybe_email(cfg, now, market, events, armed_now):
+    """Email the actionable digest when something armed/cleared; otherwise, if the
+    heartbeat is on, a short 'ran, nothing new' note so silence is never ambiguous.
+    Never raises; a send failure is logged, not fatal."""
     armed = [e for e in events if e["event"] == "ARMED"]
     cleared = [e for e in events if e["event"] == "CLEARED"]
-    if not (armed or cleared):
-        return
-    header = f"{now} · market {market.upper()} · place ARMED as GTC brackets before the open"
-    subject = f"OPM: {len(armed)} armed, {len(cleared)} cleared ({market.upper()})"
-    html = build_digest_html(armed, cleared, header)
+    header = f"{now} · market {market.upper()}"
+    if armed or cleared:
+        subject = f"OPM: {len(armed)} armed, {len(cleared)} cleared ({market.upper()})"
+        html = build_digest_html(armed, cleared,
+                                 header + " · place ARMED as GTC brackets before the open")
+    elif cfg.get("email", {}).get("heartbeat"):
+        subject = f"OPM: no changes ({market.upper()}, {armed_now} armed)"
+        html = build_heartbeat_html(header, armed_now)
+    else:
+        return                                     # quiet + heartbeat off => no mail
     reason = send_report(cfg, subject, html)
-    if reason:
+    if reason and reason != "email disabled":
         print(f"  [email] not sent: {reason}")
 
 

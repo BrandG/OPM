@@ -72,6 +72,22 @@ def build_digest_html(armed: List[dict], cleared: List[dict], header: str) -> st
         f"Score, size ~5 positions. Not advice — an unproven, still-forward-testing system.</p></div>")
 
 
+def build_heartbeat_html(header: str, armed_now: int) -> str:
+    """Tiny 'the system ran, nothing changed' note for quiet days — so silence is
+    never ambiguous between 'no changes' and 'the job died'."""
+    standing = (f"{armed_now} setup(s) currently armed in the universe (unchanged since "
+                f"the last run — nothing new to place)." if armed_now
+                else "No setups currently armed.")
+    return (
+        f"<div style='font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:660px'>"
+        f"<h2 style='margin:0 0 4px'>OPM — daily check-in, no changes</h2>"
+        f"<p style='color:#666;margin:0 0 10px'>{header}</p>"
+        f"<p style='margin:0'>{standing}</p>"
+        f"<p style='color:#888;font-size:12px;margin-top:14px'>Heartbeat only — the "
+        f"scan ran and found no newly armed or cleared setups. You get the full digest "
+        f"the moment something changes.</p></div>")
+
+
 def send_report(cfg: dict, subject: str, html: str) -> str | None:
     """Send the digest via SMTP. Returns None on success, or a reason string if it
     did nothing / failed (disabled, missing creds, no recipients, SMTP error).
