@@ -128,6 +128,13 @@ DONE: #1 out-of-sample · #2 forward paper ledger (BUILT) · #3 runtime decision
 - Daily churn is high on down days (dip-buyers rotate with the tape) — expected; watch whether flat days churn hard too (would suggest loosening the 3% armed window).
 - After any folder move, `./.venv/bin/python` still works (derives prefix from its own location); the shebang'd console scripts would break, so always use `python -m`.
 
+**EMAIL DIGEST LIVE (2026-07-17):** the daily monitor now emails the actionable
+ARMED/CLEARED digest (src/notify_email.py, ported from Carmen; change-only; flags
+far-target rows). Enabled in config; creds in `~/.config/opm.env` (chmod 600, sourced
+by run_cycle.sh) — on Windows set OPM_SMTP_USER/OPM_SMTP_PASSWORD as user env vars.
+Test send verified to brandg@gmail.com. This is the first (outbound-only) slice of the
+[[opm-automation-roadmap]]. 80 tests.
+
 **MIGRATION IN PROGRESS:** moving from the Pop!_OS laptop to the Windows 11 desktop
 (cutover planned Saturday 2026-07-18) — see **MIGRATION.md** for the full checklist.
 Laptop prep done 2026-07-15: git repo initialized, `scripts/run_cycle.ps1` ported
