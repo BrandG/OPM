@@ -68,6 +68,16 @@ trade:
   risk_pct: 0.01                    # risk this fraction of equity per trade
   max_position_pct: 0.20            # cap one position at this fraction of equity (5 positions @ 20% = fully invested; percent-based, scales with equity)
 
+email:
+  enabled: true                     # send the daily actionable digest (ARMED/CLEARED) by email
+  smtp_host: smtp.gmail.com
+  smtp_port: 587
+  from_addr: ""                     # blank => use the SMTP user
+  to_addrs:
+    - brandg@gmail.com
+  user_env: OPM_SMTP_USER           # env var holding the SMTP username (NOT the value — secret stays in ~/.config/opm.env)
+  password_env: OPM_SMTP_PASSWORD   # env var holding the Gmail app password
+
 regime:
   enabled: true                     # cash switch: suppress NEW longs when the market is below its trend
   sma_period: 200                   # trend line for the synthetic equal-weight market index

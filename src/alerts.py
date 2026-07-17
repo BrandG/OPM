@@ -55,7 +55,7 @@ def evaluate(symbol: str, prev: Optional[dict], setup: Optional[dict], now: str
         if setup:
             base.update({k: setup.get(k) for k in
                          ("side", "price", "entry", "stop", "target", "rr",
-                          "corridor_pct", "trade_score", "sector")})
+                          "corridor_pct", "target_dist_atr", "trade_score", "sector")})
         return base
 
     if cur_state == "FLAT":

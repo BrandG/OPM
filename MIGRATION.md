@@ -49,7 +49,13 @@ enable the desktop task → disable the laptop timer → verify one run.
       .venv\Scripts\python -m pip install -r requirements.txt
       .venv\Scripts\python -m pytest -q
       ```
-- [ ] **GATE: 75 passed.** Do not proceed until green.
+- [ ] **GATE: 80 passed.** Do not proceed until green.
+- [ ] Email digest creds: set the two SMTP env vars as **user** environment
+      variables (so the scheduled task inherits them) — in PowerShell:
+      `setx OPM_SMTP_USER "<gmail>"` and `setx OPM_SMTP_PASSWORD "<app-pw>"`
+      (values are in the laptop's `~/.config/opm.env`). No opm.env file on Windows;
+      `run_cycle.ps1` reads them from the environment. Verify: after a new shell,
+      `echo $env:OPM_SMTP_USER` shows the address.
 - [ ] Drop `scanner.db` into `data\` and sanity-check:
       `.venv\Scripts\python scripts\paper_report.py` → ledger prints with the
       open book intact.

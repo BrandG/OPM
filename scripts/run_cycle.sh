@@ -12,6 +12,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# Load SMTP creds for the email digest (optional — monitor stays silent if absent).
+set -a; [ -f "$HOME/.config/opm.env" ] && . "$HOME/.config/opm.env"; set +a
+
 mkdir -p reports
 ./.venv/bin/python scripts/fetch_yahoo.py --period 2y >> reports/cron.log 2>&1
 ./.venv/bin/python scripts/monitor.py --quiet-if-empty

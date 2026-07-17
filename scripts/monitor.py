@@ -31,6 +31,7 @@ from src.trades import build_setup, build_short_setup
 from src.trend import trend_state
 from src.regime import build_market_index, regime_series
 from src.alerts import evaluate, format_event, ACTIONABLE
+from src.notify_email import build_digest_html, send_report
 
 # NOTE: setups are computed from the cached daily bars. For a true intraday
 # 30-min loop, refresh survivors' last price here (yfinance delayed quote or IBKR
@@ -105,6 +106,22 @@ def main() -> None:
                 store.clear_setup_state(sym)
 
     _report(now, market, index, rg, cash_mode, short_mode, events, args.quiet_if_empty)
+    _maybe_email(cfg, now, market, events)
+
+
+def _maybe_email(cfg, now, market, events):
+    """Email the actionable digest (change-only) — only when something armed or
+    cleared. Never raises; a send failure is logged, not fatal."""
+    armed = [e for e in events if e["event"] == "ARMED"]
+    cleared = [e for e in events if e["event"] == "CLEARED"]
+    if not (armed or cleared):
+        return
+    header = f"{now} · market {market.upper()} · place ARMED as GTC brackets before the open"
+    subject = f"OPM: {len(armed)} armed, {len(cleared)} cleared ({market.upper()})"
+    html = build_digest_html(armed, cleared, header)
+    reason = send_report(cfg, subject, html)
+    if reason:
+        print(f"  [email] not sent: {reason}")
 
 
 def _report(now, market, index, rg, cash_mode, short_mode, events, quiet):

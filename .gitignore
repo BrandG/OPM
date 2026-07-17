@@ -6,3 +6,6 @@ data/*.db-wal
 data/*.db-shm
 .pytest_cache/
 reports/
+# never commit real secrets; the template is allowed
+*.env
+!*.env.example
