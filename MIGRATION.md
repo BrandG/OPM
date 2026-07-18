@@ -29,7 +29,7 @@ If the rehearsal is done, Saturday reduces to: re-copy fresh `scanner.db` →
 enable the desktop task → disable the laptop timer → verify one run.
 
 ## Phase 0 — Before leaving the laptop
-- [ ] `cd ~/Documents/OPM && ./.venv/bin/python -m pytest -q` → **75 passed**
+- [ ] `cd ~/Documents/OPM && ./.venv/bin/python -m pytest -q` → **81 passed**
 - [ ] Make sure no scan is mid-run, then grab a clean copy of **`data/scanner.db`**
       (25MB). It is gitignored on purpose — transfer it separately. It holds the
       **forward paper ledger** (irreplaceable validation evidence), setup state, and
@@ -49,7 +49,7 @@ enable the desktop task → disable the laptop timer → verify one run.
       .venv\Scripts\python -m pip install -r requirements.txt
       .venv\Scripts\python -m pytest -q
       ```
-- [ ] **GATE: 80 passed.** Do not proceed until green.
+- [ ] **GATE: 81 passed.** Do not proceed until green.
 - [ ] Email digest creds: set the two SMTP env vars as **user** environment
       variables (so the scheduled task inherits them) — in PowerShell:
       `setx OPM_SMTP_USER "<gmail>"` and `setx OPM_SMTP_PASSWORD "<app-pw>"`
