@@ -19,7 +19,7 @@ Everything stateless can happen early — only ledger ownership (fresh `scanner.
       logging in kicks the laptop's TWS session — harmless; the daily cycle
       doesn't use TWS.
 - [ ] **Dress rehearsal (optional but recommended):** transfer the repo now, build
-      the venv, run the 75 tests, copy a THROWAWAY `scanner.db`, and even run
+      the venv, run the 84 tests, copy a THROWAWAY `scanner.db`, and even run
       `run_cycle.ps1` manually against it. Treat that DB as disposable — it will
       be stale by Saturday and MUST be replaced with a fresh copy at cutover.
       The laptop remains the system of record until the timers flip.
@@ -29,7 +29,7 @@ If the rehearsal is done, Saturday reduces to: re-copy fresh `scanner.db` →
 enable the desktop task → disable the laptop timer → verify one run.
 
 ## Phase 0 — Before leaving the laptop
-- [ ] `cd ~/Documents/OPM && ./.venv/bin/python -m pytest -q` → **81 passed**
+- [ ] `cd ~/Documents/OPM && ./.venv/bin/python -m pytest -q` → **84 passed**
 - [ ] Make sure no scan is mid-run, then grab a clean copy of **`data/scanner.db`**
       (25MB). It is gitignored on purpose — transfer it separately. It holds the
       **forward paper ledger** (irreplaceable validation evidence), setup state, and
@@ -49,7 +49,7 @@ enable the desktop task → disable the laptop timer → verify one run.
       .venv\Scripts\python -m pip install -r requirements.txt
       .venv\Scripts\python -m pytest -q
       ```
-- [ ] **GATE: 81 passed.** Do not proceed until green.
+- [ ] **GATE: 84 passed.** Do not proceed until green.
 - [ ] Email digest creds: set the two SMTP env vars as **user** environment
       variables (so the scheduled task inherits them) — in PowerShell:
       `setx OPM_SMTP_USER "<gmail>"` and `setx OPM_SMTP_PASSWORD "<app-pw>"`
