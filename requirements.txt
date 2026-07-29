@@ -1,13 +1,19 @@
-pandas>=2.0
+# Numerical core: PINNED EXACTLY.
+# These decide the numbers in the forward paper ledger. pandas 3.x changed
+# copy-on-write and dtype-inference defaults; a silent shift in resample or
+# rolling behaviour would not fail a test, it would just quietly alter the
+# track record. Pinned to the versions the ledger was actually built on.
+# Upgrade deliberately, with a before/after comparison - not by drift.
+pandas==2.3.3
+numpy==2.2.6
+
+# Broker + data clients: NOT pinned on purpose. These talk to live external
+# APIs (IBKR, Yahoo) and break when the far end changes. Stale is the bigger
+# risk here than drift.
+ib_async>=2.1        # IBKR API client (read-only checks now; bracket-placer later)
+yfinance>=1.5        # scripts/fetch_yahoo.py
+
+# Tooling: floors are fine, no effect on computed results.
 pyyaml>=6.0
 pytest>=7.0
-ib_async>=2.1        # IBKR API client (read-only checks now; bracket-placer later)
-
-# imported directly by src/ and tests/, previously relied on as a pandas
-# transitive - declare it so a fresh install cannot drift
-numpy>=2.0
-
-# used by scripts/ only (plot_setups.py, plot_volatility.py, fetch_yahoo.py).
-# Not needed for the test suite, but the scripts break without them.
-matplotlib>=3.8
-yfinance>=1.5
+matplotlib>=3.8      # scripts/ only (plot_setups.py, plot_volatility.py)
