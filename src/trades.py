@@ -80,6 +80,27 @@ def size_position(entry: float, stop: float, equity: float, risk_pct: float,
     }
 
 
+def decline_metrics(closes, ret_bars: int = 42, dd_bars: int = 60) -> dict:
+    """How hard has this name been falling INTO the signal? `ret_42b` is the
+    ~2-month return; `dd_60b` is the drawdown from the 60-bar high.
+
+    REPORTING ONLY — deliberately not a gate. Tested 2026-07-29 as a hard
+    falling-knife filter across 2547 trades and every threshold was neutral or
+    harmful (see docs/PROJECT_LOG.md); the buckets that looked bad had bootstrap
+    CIs spanning zero. But the backtest is survivorship-blind to knives that kept
+    falling, so the metric is surfaced for human judgement instead of acted on.
+    Same posture as target_dist_atr. Returns None values when history is short.
+    """
+    if closes is None or len(closes) < dd_bars + 1:
+        return {"ret_42b": None, "dd_60b": None}
+    c = [float(x) for x in closes]
+    ret = c[-1] / c[-(ret_bars + 1)] - 1.0 if c[-(ret_bars + 1)] else None
+    window = c[-dd_bars:]
+    peak = max(window)
+    return {"ret_42b": round(ret, 4) if ret is not None else None,
+            "dd_60b": round(c[-1] / peak - 1.0, 4) if peak else None}
+
+
 def build_setup(symbol: str, zones: List[dict], price: float, atr: float,
                 t: dict, closes=None, trend: str = None) -> dict:
     """Build a bracket setup dict. `t` is the config 'trade' block.
@@ -89,7 +110,8 @@ def build_setup(symbol: str, zones: List[dict], price: float, atr: float,
     restricts longs to uptrends. Always returns a dict with 'passed'/'reasons'.
     """
     base = {"symbol": symbol.upper(), "price": round(price, 2), "atr": round(atr, 2),
-            "passed": False, "armed": False, "reasons": [], "trade_score": 0.0}
+            "passed": False, "armed": False, "reasons": [], "trade_score": 0.0,
+            **decline_metrics(closes)}
 
     if t.get("require_trend") and trend is not None and trend != "up":
         return {**base, "reasons": ["not_uptrend"], "support": None, "resistance": None}

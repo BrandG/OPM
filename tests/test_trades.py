@@ -1,4 +1,5 @@
-from src.trades import find_bracketing_zones, size_position, build_setup
+from src.trades import (find_bracketing_zones, size_position, build_setup,
+                        decline_metrics)
 
 
 def _zone(low, high, score, kind="support", touches=3):
@@ -110,3 +111,28 @@ def test_build_setup_blue_sky_skipped():
     assert not s["passed"]
     assert s["reasons"] == ["no_resistance_above"]
     assert s["resistance"] is None
+
+
+def test_decline_metrics_measures_fall_into_signal():
+    # 100 -> 70 over the last 42 bars, with a 60-bar peak of 120.
+    # 42 bars back from the final close must land on 100, so 100 needs 42 slots.
+    closes = [120.0] * 20 + [100.0] * 42 + [70.0]
+    m = decline_metrics(closes)
+    assert m["ret_42b"] == round(70 / 100 - 1, 4)        # -30% over ~2 months
+    assert m["dd_60b"] == round(70 / 120 - 1, 4)         # -41.7% off the 60-bar high
+
+
+def test_decline_metrics_none_on_short_history():
+    assert decline_metrics([1.0] * 10) == {"ret_42b": None, "dd_60b": None}
+    assert decline_metrics(None) == {"ret_42b": None, "dd_60b": None}
+
+
+def test_build_setup_carries_decline_metrics_without_gating():
+    """The metric is reported, never acted on: a steep decline must NOT block a
+    setup that otherwise passes (gating on it showed no edge — PROJECT_LOG)."""
+    zones = [_zone(95, 96, 70), _zone(110, 111, 65)]
+    closes = [200.0] * 20 + [140.0] * 40 + [100.0] * 2   # brutal decline into now
+    s = build_setup("KNIFE", zones, 98, 2.0, T, closes=closes)
+    assert s["passed"] is True                            # still tradeable
+    assert s["ret_42b"] < -0.20                           # and flagged as steep
+    assert s["dd_60b"] < -0.20

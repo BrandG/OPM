@@ -55,7 +55,14 @@ def evaluate(symbol: str, prev: Optional[dict], setup: Optional[dict], now: str
         if setup:
             base.update({k: setup.get(k) for k in
                          ("side", "price", "entry", "stop", "target", "rr",
-                          "corridor_pct", "target_dist_atr", "trade_score", "sector")})
+                          "corridor_pct", "target_dist_atr", "trade_score", "sector",
+                          # build_setup already sized the position; carry it through
+                          # to the report. An alert you have to hand-size is an
+                          # alert that gets sized wrong.
+                          "shares", "position_value", "risk_dollars",
+                          "position_capped",
+                          # decline context: reporting only, for the human's eyes
+                          "ret_42b", "dd_60b")})
         return base
 
     if cur_state == "FLAT":
@@ -80,8 +87,11 @@ def format_event(e: dict) -> str:
     if kind == "CLEARED":
         return f"  CLEARED   {sym:<6} setup gone / invalidated — cancel any resting order"
     side = (e.get("side") or "long").upper()
+    sh, risk = e.get("shares"), e.get("risk_dollars")
+    size = f"  {sh:g} sh (${risk:.0f} risk)" if sh is not None and risk is not None else ""
     money = (f"entry {e['entry']:.2f}  stop {e['stop']:.2f}  target {e['target']:.2f}  "
-             f"R/R {e['rr']:.1f}  score {e['trade_score']:.0f}  [{e.get('sector','?')}]")
+             f"R/R {e['rr']:.1f}  score {e['trade_score']:.0f}{size}  "
+             f"[{e.get('sector','?')}]")
     if kind == "ARMED":
         return f"  ARMED *   {sym:<6} {side}  {money}"
     if kind == "NEW_WATCH":

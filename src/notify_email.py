@@ -26,6 +26,10 @@ from typing import List
 # likely illusory (won't be reached in the ~2-week hold). Flagged, not hidden.
 FAR_TARGET_ATR = 12.0
 
+# 42-bar (~2 month) return at or below this gets flagged red as a steep decline.
+# Flag only — gating on it showed no measurable edge (see docs/PROJECT_LOG.md).
+STEEP_DECLINE = -0.20
+
 
 def _row(a: dict) -> str:
     tatr = a.get("target_dist_atr")
@@ -33,6 +37,19 @@ def _row(a: dict) -> str:
     rr = a.get("rr")
     rr_cell = (f"{rr:.1f}" if rr is not None else "—") + (" ⚠far" if far else "")
     sym_style = "font-weight:600" + (";color:#b8860b" if far else "")
+    # Sizing is computed on every scan; printing it is the difference between an
+    # order you can place as written and one you have to size in your head.
+    sh, risk = a.get("shares"), a.get("risk_dollars")
+    sh_cell = (f"{sh:g}" + (" ⓒ" if a.get("position_capped") else "")) if sh is not None else "—"
+    # Decline context for the eyeball test. Not a gate — no measurable edge in
+    # gating on it (PROJECT_LOG 2026-07-29) — but the backtest is survivorship-
+    # blind to knives that kept falling, so show the number and let the human judge.
+    r42, dd = a.get("ret_42b"), a.get("dd_60b")
+    steep = r42 is not None and r42 <= STEEP_DECLINE
+    r42_cell = f"{r42:+.0%}" if r42 is not None else "—"
+    if dd is not None:
+        r42_cell += f" <span style='color:#888'>({dd:+.0%} off hi)</span>"
+    r42_style = "color:#b00;font-weight:600" if steep else "color:#555"
     cells = [
         (a["symbol"], sym_style),
         ((a.get("side") or "long"), ""),
@@ -41,6 +58,9 @@ def _row(a: dict) -> str:
         (f"{a.get('target')}", "color:#080"),
         (rr_cell, "color:#b8860b" if far else ""),
         (f"{a.get('trade_score'):.0f}" if a.get("trade_score") is not None else "—", ""),
+        (sh_cell, "font-weight:600"),
+        (f"${risk:.0f}" if risk is not None else "—", "color:#b00"),
+        (r42_cell, r42_style),
         (a.get("sector", "?"), "color:#555"),
     ]
     tds = "".join(f"<td style='padding:6px 10px;{st}'>{v}</td>" for v, st in cells)
@@ -52,7 +72,8 @@ def build_digest_html(armed: List[dict], cleared: List[dict], header: str) -> st
     mobile-readable HTML report. Rows with a far target are flagged, not dropped."""
     th = "<th style='padding:6px 10px;text-align:left;border-bottom:2px solid #ccc'>{}</th>"
     head = "".join(th.format(h) for h in
-                   ["Symbol", "Side", "Entry", "Stop", "Target", "R:R", "Score", "Sector"])
+                   ["Symbol", "Side", "Entry", "Stop", "Target", "R:R", "Score",
+                    "Shares", "Risk", "2mo", "Sector"])
     armed_tbl = (
         f"<table style='border-collapse:collapse;width:100%;font-size:14px'>"
         f"<tr>{head}</tr>{''.join(_row(a) for a in armed)}</table>"
@@ -68,8 +89,13 @@ def build_digest_html(armed: List[dict], cleared: List[dict], header: str) -> st
         f"<p style='color:#666;margin:0 0 14px'>{header}</p>"
         f"{armed_tbl}{cleared_line}"
         f"<p style='color:#888;font-size:12px;margin-top:16px'>Place ARMED as GTC bracket "
-        f"orders before the open; ⚠far marks a target too distant to trust the R:R. Rank by "
-        f"Score, size ~5 positions. Not advice — an unproven, still-forward-testing system.</p></div>")
+        f"orders before the open at the stated Shares — that quantity is what risks the "
+        f"stated Risk if the stop fills; buying more scales the loss with it. ⓒ = size "
+        f"limited by the per-position cap, not by risk. ⚠far marks a target too distant to "
+        f"trust the R:R. <b>2mo</b> = 42-bar return and drawdown off the 60-bar high, red "
+        f"below −20% — context for your own judgement, not a filter (gating on it showed "
+        f"no measurable edge). Rank by Score, size ~5 positions. Not advice — an unproven, "
+        f"still-forward-testing system.</p></div>")
 
 
 def build_heartbeat_html(header: str, armed_now: int) -> str:
