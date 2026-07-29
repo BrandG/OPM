@@ -2,3 +2,12 @@ pandas>=2.0
 pyyaml>=6.0
 pytest>=7.0
 ib_async>=2.1        # IBKR API client (read-only checks now; bracket-placer later)
+
+# imported directly by src/ and tests/, previously relied on as a pandas
+# transitive - declare it so a fresh install cannot drift
+numpy>=2.0
+
+# used by scripts/ only (plot_setups.py, plot_volatility.py, fetch_yahoo.py).
+# Not needed for the test suite, but the scripts break without them.
+matplotlib>=3.8
+yfinance>=1.5
